@@ -1,0 +1,73 @@
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+sem_t e, f, s;
+int buff[5];
+int in = 0, out = 0;
+
+void* producer(void* arg) {
+    sem_wait(&e);     // Wait for empty slot
+    sem_wait(&s);     // Enter critical section
+    
+    int data = rand();  // Produce a random item
+    buff[in] = data;    // Add it to the buffer
+    printf("\nProduct %d entered by %lu successfully \n", data, pthread_self());
+    in = (in + 1) % 5;  // Update the 'in' pointer for circular buffer
+
+    sem_post(&s);     // Leave critical section
+    sem_post(&f);     // Signal that a product is available for consumption
+
+    sleep(1);  // Simulate time taken to produce
+    return NULL;
+}
+
+void* consumer(void* arg) {
+    for (int i = 0; i < 5; i++) {  // Consume exactly 5 items
+        sem_wait(&f);    // Wait for a product to be available
+        sem_wait(&s);    // Enter critical section
+
+        int data = buff[out];  // Consume the product
+        printf("\nProduct %d consumed by %lu successfully \n", data, pthread_self());
+        out = (out + 1) % 5;  // Update the 'out' pointer for circular buffer
+
+        sem_post(&s);     // Leave critical section
+        sem_post(&e);     // Signal that space is available for a new product
+
+        sleep(1);  // Simulate time taken to consume
+    }
+
+    return NULL;
+}
+
+int main() {
+    pthread_t tid[5], ctid;
+
+    // Initialize semaphores
+    sem_init(&f, 0, 0);  // Initially, no items are available for consumption
+    sem_init(&e, 0, 5);  // 5 empty slots available in the buffer
+    sem_init(&s, 0, 1);  // Mutex to control access to the shared buffer
+
+    // Create producer threads
+    for (int i = 0; i < 5; i++) {
+        pthread_create(&tid[i], NULL, producer, NULL);
+    }
+
+    // Create a single consumer thread
+    pthread_create(&ctid, NULL, consumer, NULL);
+
+    // Wait for all threads to finish
+    for (int i = 0; i < 5; i++) {
+        pthread_join(tid[i], NULL);
+    }
+    pthread_join(ctid, NULL);
+
+    // Destroy semaphores
+    sem_destroy(&f);
+    sem_destroy(&e);
+    sem_destroy(&s);
+
+    return 0;
+}
