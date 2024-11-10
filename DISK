@@ -1,0 +1,154 @@
+#include <stdlib.h>
+#include <stdio.h>
+
+void bubblesort(int arr[], int n) {
+    int temp;
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (arr[j] > arr[j + 1]) {
+                temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+            }
+        }
+    }
+}
+
+void SSTF(int req[], int n, int head) {
+    int totalMovement = 0;
+    int completed[n];
+    int nearest, minDist;
+    printf("Sequence of disk accesses in SSTF: ");
+    
+    for (int i = 0; i < n; i++) {
+        completed[i] = 0;  // Initially no requests are completed
+    }
+
+    for (int i = 0; i < n; i++) {
+        minDist = 1e9;
+        for (int j = 0; j < n; j++) {
+            if (!completed[j] && abs(req[j] - head) < minDist) {
+                minDist = abs(req[j] - head);
+                nearest = j;
+            }
+        }
+
+        totalMovement += minDist;
+        head = req[nearest];
+        completed[nearest] = 1;  // Mark this request as completed
+        printf("%d ", req[nearest]); // Print the request
+    }
+
+    printf("\nTotal Movement in SSTF: %d\n", totalMovement);
+}
+
+void SCAN(int req[], int head, int n, int diskSize) {
+    int totalMovement = 0;
+    bubblesort(req, n);
+    int sequence[n];
+    int i;
+
+    // Move towards the end of the disk first
+    for (i = 0; i < n; i++) {
+        if (req[i] > head) {
+            break;
+        }
+    }
+
+    printf("Sequence of disk accesses in SCAN: ");
+    // First, serve all the requests to the right of the head
+    for (int j = i; j < n; j++) {
+        totalMovement += abs(req[j] - head);
+        head = req[j];
+        sequence[j] = req[j];
+        printf("%d ", req[j]);
+    }
+
+    // Then, move to the last track and serve all the requests to the left of the head
+    totalMovement += abs(diskSize - 1 - head);
+    head = diskSize - 1;
+
+    for (int j = i - 1; j >= 0; j--) {
+        totalMovement += abs(req[j] - head);
+        head = req[j];
+        sequence[j] = req[j];
+        printf("%d ", req[j]);
+    }
+
+    printf("\nTotal Movement in SCAN: %d\n", totalMovement);
+}
+
+void CLOOK(int req[], int head, int n) {
+    int totalMovement = 0;
+    bubblesort(req, n);
+    int sequence[n];
+    int i;
+
+    // Move towards the end of the disk first
+    for (i = 0; i < n; i++) {
+        if (req[i] > head) {
+            break;
+        }
+    }
+
+    printf("Sequence of disk accesses in CLOOK: ");
+    // First, serve all the requests to the right of the head
+    for (int j = i; j < n; j++) {
+        totalMovement += abs(req[j] - head);
+        head = req[j];
+        sequence[j] = req[j];
+        printf("%d ", req[j]);
+    }
+
+    // After serving the requests to the right, move to the first request and serve all the requests to the left
+    totalMovement += abs(req[0] - head);
+    head = req[0];
+
+    for (int j = 1; j < i; j++) {
+        totalMovement += abs(req[j] - head);
+        head = req[j];
+        sequence[j] = req[j];
+        printf("%d ", req[j]);
+    }
+
+    printf("\nTotal Movement in CLOOK: %d\n", totalMovement);
+}
+
+int main() {
+    int choice;
+    int diskSize, n, head;
+
+    printf("Enter Total number of requests: ");
+    scanf("%d", &n);
+
+    printf("Enter the requests: ");
+    int req[n];
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &req[i]);
+    }
+
+    printf("Enter the initial head position: ");
+    scanf("%d", &head);
+
+    printf("Enter the disk size: ");
+    scanf("%d", &diskSize);
+
+    printf("Choose Disk Scheduling Algorithm: \n1. SSTF\n2. SCAN\n3. CLOOK\n");
+    scanf("%d", &choice);
+
+    switch (choice) {
+        case 1:
+            SSTF(req, n, head);
+            break;
+        case 2:
+            SCAN(req, head, n, diskSize);
+            break;
+        case 3:
+            CLOOK(req, head, n);
+            break;
+        default:
+            printf("Invalid option!!\n");
+    }
+
+    return 0;
+}
