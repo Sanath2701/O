@@ -1,0 +1,127 @@
+#include <stdio.h>
+
+void roundRobin(int n, int time_quantum) {
+    int time = 0, completed = 0, total_waiting_time = 0, total_turnaround_time = 0;
+    int AT[n], BT[n], RT[n], WT[n], TAT[n], CT[n];
+    
+    for (int i = 0; i < n; i++) {
+        printf("Enter AT and BT for P%d: ", i + 1);
+        scanf("%d %d", &AT[i], &BT[i]);
+        RT[i] = BT[i];  // Initialize remaining time to burst time
+    }
+
+    while (completed < n) {
+        int process_executed = 0;
+        for (int i = 0; i < n; i++) {
+            if (AT[i] <= time && RT[i] > 0) {
+                process_executed = 1;
+                if (RT[i] > time_quantum) {
+                    time += time_quantum;
+                    RT[i] -= time_quantum;
+                } else {
+                    time += RT[i];
+                    CT[i] = time;
+                    TAT[i] = CT[i] - AT[i];
+                    WT[i] = TAT[i] - BT[i];
+                    total_waiting_time += WT[i];
+                    total_turnaround_time += TAT[i];
+                    RT[i] = 0;
+                    completed++;
+                }
+            }
+        }
+        if (!process_executed) time++;  // If no process is executed, increment time
+    }
+
+    printf("\nP\tAT\tBT\tRT\tCT\tWT\tTAT\n");
+    for (int i = 0; i < n; i++)
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\t%d\n", i + 1, AT[i], BT[i], RT[i], CT[i], WT[i], TAT[i]);
+
+    printf("\nAvg WT: %.2f\n", (float)total_waiting_time / n);
+    printf("Avg TAT: %.2f\n", (float)total_turnaround_time / n);
+}
+
+void shortestJobFirst(int n) {
+    int time = 0, completed = 0, total_waiting_time = 0, total_turnaround_time = 0;
+    int AT[n], BT[n], RT[n], CT[n];
+    int WT[n], TAT[n], smallest;
+
+    for (int i = 0; i < n; i++) {
+        printf("Enter AT and BT for P%d: ", i + 1);
+        scanf("%d %d", &AT[i], &BT[i]);
+        RT[i] = BT[i];  // Initialize remaining time to burst time
+    }
+
+    while (completed != n) {
+        smallest = -1;
+        int min_remaining_time = 9999;
+
+        for (int i = 0; i < n; i++) {
+            if (AT[i] <= time && RT[i] > 0 && RT[i] < min_remaining_time) {
+                min_remaining_time = RT[i];
+                smallest = i;
+            }
+        }
+
+        if (smallest == -1) {
+            time++;
+            continue;
+        }
+
+        RT[smallest]--;
+        if (RT[smallest] == 0) {
+            completed++;
+            CT[smallest] = time + 1;
+            TAT[smallest] = CT[smallest] - AT[smallest];
+            WT[smallest] = TAT[smallest] - BT[smallest];
+            total_waiting_time += WT[smallest];
+            total_turnaround_time += TAT[smallest];
+        }
+
+        time++;
+    }
+
+    printf("\nP\tAT\tBT\tRT\tCT\tWT\tTAT\n");
+    for (int i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\t%d\n", i + 1, AT[i], BT[i], RT[i], CT[i], WT[i], TAT[i]);
+    }
+
+    printf("\nAvg WT: %.2f\n", (float)total_waiting_time / n);
+    printf("Avg TAT: %.2f\n", (float)total_turnaround_time / n);
+}
+
+int main() {
+    int n, choice, continue_program;
+
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+
+    do {
+        printf("\nChoose CPU Scheduling Algorithm:\n");
+        printf("1. Round Robin\n");
+        printf("2. Shortest Job First\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                printf("Enter time quantum for Round Robin: ");
+                int time_quantum;
+                scanf("%d", &time_quantum);
+                roundRobin(n, time_quantum);
+                break;
+            case 2:
+                shortestJobFirst(n);
+                break;
+            default:
+                printf("Invalid choice!\n");
+                break;
+        }
+
+        printf("\nDo you want to continue? (1 for Yes / 0 for No): ");
+        scanf("%d", &continue_program);
+    } while (continue_program == 1);
+
+    printf("Exiting program...\n");
+    return 0;
+}
