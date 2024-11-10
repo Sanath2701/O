@@ -1,0 +1,76 @@
+SENDER FILE
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+struct data { 
+    char str[100]; 
+    int flag; 
+};
+
+int main() {
+    // Generate a key for shared memory segment using ftok
+    key_t key = ftok("abc.txt", 'A');
+    // Create and attach the shared memory segment
+    int shmid = shmget(key, sizeof(struct data), 0777 | IPC_CREAT);
+    struct data *d = (struct data *)shmat(shmid, NULL, 0);
+    
+    // Get input from the user
+    printf("Enter data: ");
+    fgets(d->str, sizeof(d->str), stdin);
+    
+    // Set the flag to 1 to notify the receiver that data is ready
+    d->flag = 1;
+    
+    // Wait until the receiver sets the flag to -1, signaling data reception
+    while (d->flag != -1) { 
+        sleep(2); 
+    }
+    
+    // Detach from the shared memory segment and delete it
+    shmdt(d); 
+    shmctl(shmid, IPC_RMID, NULL);
+    
+    return 0;
+}
+
+receiver
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+struct data { 
+    char str[100]; 
+    int flag; 
+};
+
+int main() {
+    // Generate a key for shared memory segment using ftok
+    key_t key = ftok("abc.txt", 'A');
+    // Create and attach the shared memory segment
+    int shmid = shmget(key, sizeof(struct data), 0777 | IPC_CREAT);
+    struct data *d = (struct data *)shmat(shmid, NULL, 0);
+    
+    // Wait until the sender sets the flag to 1, signaling the presence of data
+    while (d->flag != 1) { 
+        sleep(2); 
+    }
+    
+    // Print the accepted data
+    printf("Accepted data: %s", d->str);
+    
+    // Change the flag to -1 to signal the sender that data has been received
+    d->flag = -1;
+    
+    // Detach from the shared memory segment
+    shmdt(d);
+    
+    return 0;
+}
+
