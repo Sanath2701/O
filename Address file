@@ -1,0 +1,74 @@
+repeat=1
+
+while [ $repeat = 1 ]
+do
+	echo -e "1. Create addressbk \n2. Insert record \n3. Display record \n4. Search record \n5. Delete record \n6. Modify record \n Enter choice : "
+	read ch
+	
+	case $ch in
+		"1") touch addressbk
+			echo "Addressbook created"
+			;;
+			
+		"2") echo "Enter name : "
+			read name
+			echo "Enter ID : "
+			read ID
+			echo "Enter salary : "
+			read salary
+			
+			echo -e "$ID\t$name\t$salary">>addressbk
+			echo "Record created"
+			;;
+			
+		"3") cat addressbk
+			;;
+			
+		"4") echo "Enter ID to be searched : "
+			read search
+			
+			if grep $search addressbk 
+			then
+				echo "Record found"
+			else
+				echo "Record does not exist"
+			fi
+			;;
+			
+		"5") cat addressbk 
+			echo "Enter record ID to be deleted"
+			read search1
+			grep -v $search1 addressbk > temp
+			
+			if grep $search1 addressbk
+			then
+				mv temp addressbk					
+				echo "Record deleted"	
+			else
+				echo "Record does not exist"
+			fi
+			;;
+			
+		"6") echo "Enter ID of the record to be modified : "
+			read modify
+			no=$(grep -n "$modify" addressbk | cut -c 1)
+			
+			if grep $modify addressbk
+			then
+				echo "Modifying line number : $no"
+				echo "Enter name : "
+				read name
+				echo "Enter ID : "
+				read ID
+				echo "Enter salary : "
+				read salary
+				
+				sed -i "$no s/.*/$ID\t$name\t$salary/" addressbk
+				echo "Record modified"
+			fi
+			;;
+
+	esac
+	echo "Do you want to continue? : "
+	read repeat
+done
